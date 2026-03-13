@@ -1,11 +1,20 @@
 #include <iostream>
 #include "Channel.h"
 #include "Log/Logger.h"
+#include "login.pb.h"
 
 int main(int argc, char** argv) 
 {
     Channel channel;
     LOG_INFO << "=== Gateway Server is starting ===";
-    // 稍后这里会启动 MyMuduo 的 TcpServer，并接收客户端连接
+    
+    game::rpc::LoginService_Stub stub(&channel);
+    game::rpc::LoginRequest request;
+    game::rpc::LoginResponse response;
+    request.set_username("test");
+    request.set_password("123456");
+    stub.Login(nullptr, &request, &response, nullptr);
+    string success = response.errcode() == 0 ? "true" : "false";
+    LOG_INFO << "login request " << success;
     return 0;
 }
