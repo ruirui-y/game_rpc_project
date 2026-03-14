@@ -195,9 +195,25 @@ class JoinMatchRequest final :
   // accessors -------------------------------------------------------
 
   enum : int {
+    kGatewayIpFieldNumber = 3,
     kUserIdFieldNumber = 1,
     kEloScoreFieldNumber = 2,
+    kGatewayPortFieldNumber = 4,
   };
+  // string gateway_ip = 3;
+  void clear_gateway_ip();
+  const std::string& gateway_ip() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_gateway_ip(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_gateway_ip();
+  PROTOBUF_NODISCARD std::string* release_gateway_ip();
+  void set_allocated_gateway_ip(std::string* gateway_ip);
+  private:
+  const std::string& _internal_gateway_ip() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_gateway_ip(const std::string& value);
+  std::string* _internal_mutable_gateway_ip();
+  public:
+
   // int32 user_id = 1;
   void clear_user_id();
   int32_t user_id() const;
@@ -216,6 +232,15 @@ class JoinMatchRequest final :
   void _internal_set_elo_score(int32_t value);
   public:
 
+  // int32 gateway_port = 4;
+  void clear_gateway_port();
+  int32_t gateway_port() const;
+  void set_gateway_port(int32_t value);
+  private:
+  int32_t _internal_gateway_port() const;
+  void _internal_set_gateway_port(int32_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:game.rpc.JoinMatchRequest)
  private:
   class _Internal;
@@ -223,8 +248,10 @@ class JoinMatchRequest final :
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr gateway_ip_;
   int32_t user_id_;
   int32_t elo_score_;
+  int32_t gateway_port_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_match_2eproto;
 };
@@ -498,6 +525,77 @@ inline void JoinMatchRequest::_internal_set_elo_score(int32_t value) {
 inline void JoinMatchRequest::set_elo_score(int32_t value) {
   _internal_set_elo_score(value);
   // @@protoc_insertion_point(field_set:game.rpc.JoinMatchRequest.elo_score)
+}
+
+// string gateway_ip = 3;
+inline void JoinMatchRequest::clear_gateway_ip() {
+  gateway_ip_.ClearToEmpty();
+}
+inline const std::string& JoinMatchRequest::gateway_ip() const {
+  // @@protoc_insertion_point(field_get:game.rpc.JoinMatchRequest.gateway_ip)
+  return _internal_gateway_ip();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void JoinMatchRequest::set_gateway_ip(ArgT0&& arg0, ArgT... args) {
+ 
+ gateway_ip_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.rpc.JoinMatchRequest.gateway_ip)
+}
+inline std::string* JoinMatchRequest::mutable_gateway_ip() {
+  std::string* _s = _internal_mutable_gateway_ip();
+  // @@protoc_insertion_point(field_mutable:game.rpc.JoinMatchRequest.gateway_ip)
+  return _s;
+}
+inline const std::string& JoinMatchRequest::_internal_gateway_ip() const {
+  return gateway_ip_.Get();
+}
+inline void JoinMatchRequest::_internal_set_gateway_ip(const std::string& value) {
+  
+  gateway_ip_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* JoinMatchRequest::_internal_mutable_gateway_ip() {
+  
+  return gateway_ip_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* JoinMatchRequest::release_gateway_ip() {
+  // @@protoc_insertion_point(field_release:game.rpc.JoinMatchRequest.gateway_ip)
+  return gateway_ip_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void JoinMatchRequest::set_allocated_gateway_ip(std::string* gateway_ip) {
+  if (gateway_ip != nullptr) {
+    
+  } else {
+    
+  }
+  gateway_ip_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), gateway_ip,
+      GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (gateway_ip_.IsDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited())) {
+    gateway_ip_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.rpc.JoinMatchRequest.gateway_ip)
+}
+
+// int32 gateway_port = 4;
+inline void JoinMatchRequest::clear_gateway_port() {
+  gateway_port_ = 0;
+}
+inline int32_t JoinMatchRequest::_internal_gateway_port() const {
+  return gateway_port_;
+}
+inline int32_t JoinMatchRequest::gateway_port() const {
+  // @@protoc_insertion_point(field_get:game.rpc.JoinMatchRequest.gateway_port)
+  return _internal_gateway_port();
+}
+inline void JoinMatchRequest::_internal_set_gateway_port(int32_t value) {
+  
+  gateway_port_ = value;
+}
+inline void JoinMatchRequest::set_gateway_port(int32_t value) {
+  _internal_set_gateway_port(value);
+  // @@protoc_insertion_point(field_set:game.rpc.JoinMatchRequest.gateway_port)
 }
 
 // -------------------------------------------------------------------

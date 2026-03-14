@@ -20,8 +20,10 @@ namespace game {
 namespace rpc {
 constexpr JoinMatchRequest::JoinMatchRequest(
   ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
-  : user_id_(0)
-  , elo_score_(0){}
+  : gateway_ip_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , user_id_(0)
+  , elo_score_(0)
+  , gateway_port_(0){}
 struct JoinMatchRequestDefaultTypeInternal {
   constexpr JoinMatchRequestDefaultTypeInternal()
     : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
@@ -59,6 +61,8 @@ const uint32_t TableStruct_match_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pr
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::game::rpc::JoinMatchRequest, user_id_),
   PROTOBUF_FIELD_OFFSET(::game::rpc::JoinMatchRequest, elo_score_),
+  PROTOBUF_FIELD_OFFSET(::game::rpc::JoinMatchRequest, gateway_ip_),
+  PROTOBUF_FIELD_OFFSET(::game::rpc::JoinMatchRequest, gateway_port_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::game::rpc::JoinMatchResponse, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -70,7 +74,7 @@ const uint32_t TableStruct_match_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pr
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, -1, sizeof(::game::rpc::JoinMatchRequest)},
-  { 8, -1, -1, sizeof(::game::rpc::JoinMatchResponse)},
+  { 10, -1, -1, sizeof(::game::rpc::JoinMatchResponse)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -79,16 +83,17 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 };
 
 const char descriptor_table_protodef_match_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\013match.proto\022\010game.rpc\"6\n\020JoinMatchRequ"
-  "est\022\017\n\007user_id\030\001 \001(\005\022\021\n\telo_score\030\002 \001(\005\""
-  "4\n\021JoinMatchResponse\022\017\n\007errcode\030\001 \001(\005\022\016\n"
-  "\006errmsg\030\002 \001(\t2T\n\014MatchService\022D\n\tJoinQue"
-  "ue\022\032.game.rpc.JoinMatchRequest\032\033.game.rp"
-  "c.JoinMatchResponseB\003\200\001\001b\006proto3"
+  "\n\013match.proto\022\010game.rpc\"`\n\020JoinMatchRequ"
+  "est\022\017\n\007user_id\030\001 \001(\005\022\021\n\telo_score\030\002 \001(\005\022"
+  "\022\n\ngateway_ip\030\003 \001(\t\022\024\n\014gateway_port\030\004 \001("
+  "\005\"4\n\021JoinMatchResponse\022\017\n\007errcode\030\001 \001(\005\022"
+  "\016\n\006errmsg\030\002 \001(\t2T\n\014MatchService\022D\n\tJoinQ"
+  "ueue\022\032.game.rpc.JoinMatchRequest\032\033.game."
+  "rpc.JoinMatchResponseB\003\200\001\001b\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_match_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_match_2eproto = {
-  false, false, 232, descriptor_table_protodef_match_2eproto, "match.proto", 
+  false, false, 274, descriptor_table_protodef_match_2eproto, "match.proto", 
   &descriptor_table_match_2eproto_once, nullptr, 0, 2,
   schemas, file_default_instances, TableStruct_match_2eproto::offsets,
   file_level_metadata_match_2eproto, file_level_enum_descriptors_match_2eproto, file_level_service_descriptors_match_2eproto,
@@ -120,17 +125,29 @@ JoinMatchRequest::JoinMatchRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
 JoinMatchRequest::JoinMatchRequest(const JoinMatchRequest& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  gateway_ip_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    gateway_ip_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_gateway_ip().empty()) {
+    gateway_ip_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_gateway_ip(), 
+      GetArenaForAllocation());
+  }
   ::memcpy(&user_id_, &from.user_id_,
-    static_cast<size_t>(reinterpret_cast<char*>(&elo_score_) -
-    reinterpret_cast<char*>(&user_id_)) + sizeof(elo_score_));
+    static_cast<size_t>(reinterpret_cast<char*>(&gateway_port_) -
+    reinterpret_cast<char*>(&user_id_)) + sizeof(gateway_port_));
   // @@protoc_insertion_point(copy_constructor:game.rpc.JoinMatchRequest)
 }
 
 inline void JoinMatchRequest::SharedCtor() {
+gateway_ip_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  gateway_ip_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
     reinterpret_cast<char*>(&user_id_) - reinterpret_cast<char*>(this)),
-    0, static_cast<size_t>(reinterpret_cast<char*>(&elo_score_) -
-    reinterpret_cast<char*>(&user_id_)) + sizeof(elo_score_));
+    0, static_cast<size_t>(reinterpret_cast<char*>(&gateway_port_) -
+    reinterpret_cast<char*>(&user_id_)) + sizeof(gateway_port_));
 }
 
 JoinMatchRequest::~JoinMatchRequest() {
@@ -142,6 +159,7 @@ JoinMatchRequest::~JoinMatchRequest() {
 
 inline void JoinMatchRequest::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  gateway_ip_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void JoinMatchRequest::ArenaDtor(void* object) {
@@ -160,9 +178,10 @@ void JoinMatchRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  gateway_ip_.ClearToEmpty();
   ::memset(&user_id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&elo_score_) -
-      reinterpret_cast<char*>(&user_id_)) + sizeof(elo_score_));
+      reinterpret_cast<char*>(&gateway_port_) -
+      reinterpret_cast<char*>(&user_id_)) + sizeof(gateway_port_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -184,6 +203,24 @@ const char* JoinMatchRequest::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
           elo_score_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // string gateway_ip = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
+          auto str = _internal_mutable_gateway_ip();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "game.rpc.JoinMatchRequest.gateway_ip"));
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int32 gateway_port = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
+          gateway_port_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
@@ -229,6 +266,22 @@ uint8_t* JoinMatchRequest::_InternalSerialize(
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(2, this->_internal_elo_score(), target);
   }
 
+  // string gateway_ip = 3;
+  if (!this->_internal_gateway_ip().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_gateway_ip().data(), static_cast<int>(this->_internal_gateway_ip().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "game.rpc.JoinMatchRequest.gateway_ip");
+    target = stream->WriteStringMaybeAliased(
+        3, this->_internal_gateway_ip(), target);
+  }
+
+  // int32 gateway_port = 4;
+  if (this->_internal_gateway_port() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(4, this->_internal_gateway_port(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -245,6 +298,13 @@ size_t JoinMatchRequest::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  // string gateway_ip = 3;
+  if (!this->_internal_gateway_ip().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_gateway_ip());
+  }
+
   // int32 user_id = 1;
   if (this->_internal_user_id() != 0) {
     total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32SizePlusOne(this->_internal_user_id());
@@ -253,6 +313,11 @@ size_t JoinMatchRequest::ByteSizeLong() const {
   // int32 elo_score = 2;
   if (this->_internal_elo_score() != 0) {
     total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32SizePlusOne(this->_internal_elo_score());
+  }
+
+  // int32 gateway_port = 4;
+  if (this->_internal_gateway_port() != 0) {
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32SizePlusOne(this->_internal_gateway_port());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
@@ -277,11 +342,17 @@ void JoinMatchRequest::MergeFrom(const JoinMatchRequest& from) {
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (!from._internal_gateway_ip().empty()) {
+    _internal_set_gateway_ip(from._internal_gateway_ip());
+  }
   if (from._internal_user_id() != 0) {
     _internal_set_user_id(from._internal_user_id());
   }
   if (from._internal_elo_score() != 0) {
     _internal_set_elo_score(from._internal_elo_score());
+  }
+  if (from._internal_gateway_port() != 0) {
+    _internal_set_gateway_port(from._internal_gateway_port());
   }
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -299,10 +370,17 @@ bool JoinMatchRequest::IsInitialized() const {
 
 void JoinMatchRequest::InternalSwap(JoinMatchRequest* other) {
   using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &gateway_ip_, lhs_arena,
+      &other->gateway_ip_, rhs_arena
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(JoinMatchRequest, elo_score_)
-      + sizeof(JoinMatchRequest::elo_score_)
+      PROTOBUF_FIELD_OFFSET(JoinMatchRequest, gateway_port_)
+      + sizeof(JoinMatchRequest::gateway_port_)
       - PROTOBUF_FIELD_OFFSET(JoinMatchRequest, user_id_)>(
           reinterpret_cast<char*>(&user_id_),
           reinterpret_cast<char*>(&other->user_id_));
