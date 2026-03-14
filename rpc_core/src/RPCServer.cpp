@@ -9,7 +9,7 @@ void RPCServer::RegisterService(google::protobuf::Service* service)
 
 void RPCServer::Run()
 {
-	TcpServer server(&event_loop_, ip_, port_, 10);
+	TcpServer server(&event_loop_, ip_, port_, 100000);
 	server.SetMessageCallback(
 		[this](const std::shared_ptr<TcpConnection>& conn, Buffer* buffer)
 		{
@@ -22,65 +22,70 @@ void RPCServer::Run()
 
 void RPCServer::OnMessage(const std::shared_ptr<TcpConnection>& conn, Buffer* buffer)
 {
-    std::string recv_buf = buffer->RetrieveAllAsString();                                               
-
-    // 1. 从字符流中读取前4个字节的内容
-    uint32_t header_size = 0;                                                                           
-    recv_buf.copy((char*)&header_size, 4, 0);                                                           
-
-    // 2. 根据header_size读取数据头的原始字符流，反序列化数据
-    std::string rpc_header_str = recv_buf.substr(4, header_size);                                       
-    rpc::core::RpcHeader rpcHeader;                                                                     
-    std::string service_name;                                                                           
-    std::string method_name;                                                                            
-    uint32_t method_index;                                                                              
-    uint32_t args_size;                                                                                 
-
-    if (rpcHeader.ParseFromString(rpc_header_str))                                                      
+    while (buffer->ReadableBytes() >= 4)
     {
-        service_name = rpcHeader.service_name();                                                        
-        method_name = rpcHeader.method_name();                                                          
-        method_index = rpcHeader.method_index();
-        args_size = rpcHeader.args_size();                                                              
+        // 1. 偷看前4个字节（不从buffer剔除），获取 header_size
+        uint32_t header_size = buffer->PeekInt32();
+
+        // 2. 检查：连 rpc_header 都还没收全？
+        if (buffer->ReadableBytes() < 4 + header_size) 
+        {
+            break;                                                                                  // 半包，跳出循环等下一次 epoll 唤醒
+        }
+
+        // 3. 偷拿 header 数据进行反序列化（依然不剔除 buffer，因为 args 还没确认收全）
+        std::string rpc_header_str(buffer->peek() + 4, header_size);
+        rpc::core::RpcHeader rpcHeader;
+        if (!rpcHeader.ParseFromString(rpc_header_str)) {
+            LOG_ERROR << "rpc header parse error!";
+            return;
+        }
+
+        uint32_t args_size = rpcHeader.args_size();
+
+        // 4. 检查：真正的请求体 (args) 收全了吗？
+        if (buffer->ReadableBytes() < 4 + header_size + args_size) 
+        {
+            break;                                                                                  // 半包，跳出循环继续等
+        }
+
+        // ============ 走到这里，说明一个完整的 RPC 请求终于拼齐了！============
+
+        // 5. 正式把这个完整包从 Buffer 里剥离出来
+        buffer->retrieve(4);                                                                        // 剥离长度信息
+        buffer->retrieve(header_size);                                                              // 剥离 header
+        std::string args_str = buffer->RetrieveAsString(args_size);                                 // 剥离并获取真正的参数数据
+
+        // 6. 后续的业务分发逻辑 (找服务、生成 request、CallMethod)
+        std::string service_name = rpcHeader.service_name();
+        auto it = services.find(service_name);
+        if (it == services.end()) {
+            LOG_ERROR << service_name << " is not exist!";
+            return;
+        }
+
+        google::protobuf::Service* service = it->second;
+        const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->method(rpcHeader.method_index());
+
+        google::protobuf::Message* request = service->GetRequestPrototype(method).New();
+        if (!request->ParseFromString(args_str)) 
+        {
+            LOG_ERROR << "request parse error!";
+            delete request;                                                                         // 防止解析失败时内存泄漏
+            return;
+        }
+        google::protobuf::Message* response = service->GetResponsePrototype(method).New();
+
+        google::protobuf::Closure* done = google::protobuf::NewCallback<RPCServer,
+            const std::shared_ptr<TcpConnection>&, google::protobuf::Message*>
+            (this, &RPCServer::SendRpcResponse, conn, response);
+
+        service->CallMethod(method, nullptr, request, response, done);
+
+        // 释放堆空间
+        if (request) delete request;
+        if (response) delete response;
     }
-    else
-    {
-        LOG_ERROR << "rpc_header_str: " << rpc_header_str.c_str() << " parse error!";                                                                                                                                                                                                                                                                                                                                           // 记录解析失败
-        return;
-    }
-
-    // 3. 获取rpc方法参数的二进制数据
-    std::string args_str = recv_buf.substr(4 + header_size, args_size);                                 
-
-    // 4. 获取service对象和method对象
-    auto it = services.find(service_name);                                                              
-    if (it == services.end())
-    {
-        LOG_ERROR << "%s is not exist! " << service_name.c_str();                                       
-        return;
-    }
-
-    google::protobuf::Service* service = it->second;                                                    
-    const google::protobuf::ServiceDescriptor* service_desc = service->GetDescriptor();                         
-    const google::protobuf::MethodDescriptor* method = service_desc->method(method_index);              
-
-    // 5. 生成rpc方法调用的请求request和响应response参数
-    google::protobuf::Message* request = service->GetRequestPrototype(method).New();                    
-    if (!request->ParseFromString(args_str))                                                            
-    {
-        LOG_ERROR << "request parse error, content: " << args_str.c_str();                              
-        return;
-    }
-    google::protobuf::Message* response = service->GetResponsePrototype(method).New();                  
-
-    // 6. 设置回调函数，将rpc响应发送给客户端
-    google::protobuf::Closure* done = google::protobuf::NewCallback<RPCServer,
-        const std::shared_ptr<TcpConnection>&,
-        google::protobuf::Message*>
-        (this, &RPCServer::SendRpcResponse, conn, response);
-
-    // 7. 当前服务会根据method调用自己的rpc方法
-    service->CallMethod(method, nullptr, request, response, done);
 }
 
 // 长度(4B) + 内容
@@ -92,8 +97,12 @@ void RPCServer::SendRpcResponse(const std::shared_ptr<TcpConnection>& conn, goog
         // --- 添加 4 字节长度报头 ---
         uint32_t response_size = response_str.size();
         std::string send_str;
+
+        // 转换成网络字节序
+        uint32_t net_response_size = htonl(response_size);
+        send_str.insert(0, std::string((char*)&net_response_size, 4));
+
         // 把长度信息以二进制形式放入前 4 个字节
-        send_str.insert(0, std::string((char*)&response_size, 4));
         send_str += response_str;
 
         conn->Send(send_str);
