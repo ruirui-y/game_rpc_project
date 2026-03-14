@@ -20,13 +20,19 @@ void Channel::CallMethod(const google::protobuf::MethodDescriptor* method,
     const google::protobuf::ServiceDescriptor* service_descrip = method->service();
     string service_name = service_descrip->name();
     string method_name = method->name();
-    int param_size = request->ByteSize();
+    uint32_t args_size = 0;
+    std::string args_str;
+    if (request->SerializeToString(&args_str))
+    {
+        args_size = args_str.size();
+    }
 
     // 2. 构造请求头
     rpc::core::RpcHeader header;
     header.set_service_name(method->service()->name());
     header.set_method_name(method->name());
-    header.set_args_size(param_size);
+    header.set_method_index(method->index());
+    header.set_args_size(args_size);
 
     // 3. 序列化请求头和请求数据
     std::string header_str;

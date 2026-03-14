@@ -1,7 +1,14 @@
 #include <iostream>
+#include "RPCServer.h"
+#include "MyLoginService.h"
 
-int main(int argc, char** argv) {
-    std::cout << "=== Login Server is starting ===" << std::endl;
-    // 稍后这里会实例化你手写的 RpcProvider，并注册 LoginService
+int main(int argc, char** argv) 
+{
+    RPCServer server("127.0.0.1", 9090);
+    MyLoginService Login;
+    server.RegisterService(&Login);
+
+    server.Run();
+
     return 0;
 }
