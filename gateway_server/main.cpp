@@ -16,5 +16,6 @@ int main(int argc, char** argv)
     stub.Login(nullptr, &request, &response, nullptr);
     string success = response.errcode() == 0 ? "true" : "false";
     LOG_INFO << "login request " << success;
+    LOG_INFO << "login token = " << response.token();
     return 0;
 }
