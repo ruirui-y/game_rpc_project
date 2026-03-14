@@ -1,21 +1,19 @@
 #include <iostream>
-#include "Channel.h"
-#include "Log/Logger.h"
-#include "login.pb.h"
+#include <mymuduo/Log/Logger.h>
+#include "RPCServer.h"
+#include "MyGatewayService.h"
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
-    Channel channel;
-    LOG_INFO << "=== Gateway Server is starting ===";
-    
-    game::rpc::LoginService_Stub stub(&channel);
-    game::rpc::LoginRequest request;
-    game::rpc::LoginResponse response;
-    request.set_username("test");
-    request.set_password("123456");
-    stub.Login(nullptr, &request, &response, nullptr);
-    string success = response.errcode() == 0 ? "true" : "false";
-    LOG_INFO << "login request " << success;
-    LOG_INFO << "login token = " << response.token();
+    LOG_INFO << "=== Gateway Server is starting on port 8000 ===";
+
+    // 网关自己开一个 RPCServer，专门用来接收后端的反向调用
+    RPCServer gateway_server("127.0.0.1", 8000);
+    MyGatewayService gateway_service;
+    gateway_server.RegisterService(&gateway_service);
+
+    // 阻塞运行
+    gateway_server.Run();
+
     return 0;
 }
