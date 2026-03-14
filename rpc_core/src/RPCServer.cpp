@@ -1,7 +1,6 @@
 #include "RPCServer.h"
 #include "rpcheader.pb.h"
 #include <mymuduo/Log/Logger.h>
-#include "GatewayTcpServer.h"
 
 void RPCServer::RegisterService(google::protobuf::Service* service)
 {
