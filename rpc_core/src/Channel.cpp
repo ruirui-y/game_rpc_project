@@ -101,7 +101,6 @@ void Channel::CallMethod(const google::protobuf::MethodDescriptor* method,
         return;
     }
 
-
     // 8. 接收响应体
     std::string response_data;
     response_data.resize(response_size);
