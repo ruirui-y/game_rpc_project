@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package game.rpc;
+
+option cc_generic_services = true;
+
+// 加入匹配队列的请求
+message JoinMatchRequest 
+{
+    int32 user_id = 1;                                                      // 玩家的唯一ID (网关验证登录后分配的)
+    int32 elo_score = 2;                                                    // 玩家的隐藏分/段位分 (用于公平匹配)
+
+    // ======== 新增：网关的路由寻址信息 ========
+    string gateway_ip = 3;                                                  // 玩家当前所在的网关 IP (用于反向推送)
+    int32 gateway_port = 4;                                                 // 网关接收反向 RPC 的监听端口
+}
+
+// 加入匹配队列的响应
+message JoinMatchResponse 
+{
+    int32 errcode = 1;                                                      // 0 表示成功进入队列，非 0 表示异常 (如：已经在队列中)
+    string errmsg = 2;      
+}
+
+// 定义匹配服务
+service MatchService
+{
+    // 玩家请求加入匹配队列
+    rpc JoinQueue(JoinMatchRequest) returns(JoinMatchResponse);
+}
