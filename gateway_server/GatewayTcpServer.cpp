@@ -4,10 +4,13 @@
 #include <arpa/inet.h>
 #include "client_gateway.pb.h"
 #include "MsgID.h"
+#include "login.pb.h"
+#include "match.pb.h"
+#include "MyChannel.h"
 using namespace std::placeholders;
 
 GatewayTcpServer::GatewayTcpServer(EventLoop* loop, const std::string& ip, uint16_t port)
-    : server_(loop, ip, port, 100)
+    : server_(loop, ip, port, 100), ip_(ip), port_(port)
 {
     server_.SetConnectionCallback(std::bind(&GatewayTcpServer::OnConnection, this, _1));
     server_.SetMessageCallback(std::bind(&GatewayTcpServer::OnMessage, this, _1, _2));
@@ -79,51 +82,106 @@ void GatewayTcpServer::OnMessage(const std::shared_ptr<TcpConnection>& conn, Buf
 // ================== 具体的业务处理 (Handler) ==================
 void GatewayTcpServer::HandleLoginReq(const std::shared_ptr<TcpConnection>& conn, const std::string& pb_data)
 {
-    // 1. 反序列化外网请求
-    game::client::ClientLoginRequest req;
-    if (!req.ParseFromString(pb_data)) {
+    // 1. 解包外网请求
+    game::client::ClientLoginRequest client_req;
+    if (!client_req.ParseFromString(pb_data)) {
         LOG_ERROR << "[Gateway] Failed to parse ClientLoginRequest!";
         return;
     }
 
-    LOG_INFO << "[Gateway] User attempting login with account: " << req.username();
+    LOG_INFO << "[Gateway] User attempting login with account: " << client_req.username();
 
-    // TODO: 真正的业务逻辑应该是化身 RPC Client 去调用 LoginServer 进行验密
-    // 这里我们依然先用 Mock 逻辑通过测试
-    int32_t mock_uid = 1000;
+    // 2. 转换成内网RPC请求
+    game::rpc::LoginRequest rpc_req;
+    rpc_req.set_username(client_req.username());
+    rpc_req.set_password(client_req.password());
+    game::rpc::LoginResponse rpc_resp;
+    
+    // 3. 化身 RPC Client，向 LoginServer 发起登录请求
+    MyChannel login_channel("127.0.0.1", 9090);
+    game::rpc::LoginService_Stub stub(&login_channel);
+    stub.Login(nullptr, &rpc_req, &rpc_resp, nullptr);
 
-    // 登录成功，绑定 Session
-    conn->SetContext(mock_uid);
+    // 4. 解析 RPC 响应，组装成外网响应准备发给 UE5
+    game::client::ClientLoginResponse client_resp;
+    client_resp.set_errcode(rpc_resp.errcode());
+    client_resp.set_errmsg(rpc_resp.errmsg());
+
+    if (rpc_resp.errcode() == 0)
     {
-        std::lock_guard<std::mutex> lock(session_mutex_);
-        user_sessions_[mock_uid] = conn;
+        // 登录成功！拿到后端分配的真实 UID，绑定到当前长连接上
+        int32_t real_uid = rpc_resp.user_id();
+        conn->SetContext(real_uid);
+
+        {
+            std::lock_guard<std::mutex> lock(session_mutex_);
+            user_sessions_[real_uid] = conn;
+        }
+
+        LOG_INFO << "[Gateway] Player " << real_uid << " login success! Session bound.";
+        client_resp.set_user_id(real_uid);
     }
 
-    // 2. 组装外网响应
-    game::client::ClientLoginResponse resp;
-    resp.set_errcode(0);
-    resp.set_errmsg("Welcome to UE5 Server");
-    resp.set_user_id(mock_uid);
-
+    // 5. 序列化外网响应，直接打回给客户端
     std::string resp_data;
-    resp.SerializeToString(&resp_data);
-    PushMessageToClient(mock_uid, game::net::MSG_LOGIN_RESP, resp_data);
+    client_resp.SerializeToString(&resp_data);
+    SendToConn(conn, game::net::MSG_LOGIN_RESP, resp_data);
 }
 
 void GatewayTcpServer::HandleJoinMatchReq(const std::shared_ptr<TcpConnection>& conn, const std::string& pb_data)
 {
-    // 安全校验：没登录就发匹配请求？直接断开连接防外挂！
-    if (!conn->GetContext().has_value())
-    {
+    // 1. 安全校验：没登录就发匹配请求？直接踢掉防外挂！
+    if (!conn->GetContext().has_value()) {
         conn->ForceClose();
         return;
     }
 
+    // 从万能口袋里掏出这个长连接主人的真实身份
     int32_t uid = std::any_cast<int32_t>(conn->GetContext());
     LOG_INFO << "[Gateway] Player " << uid << " wants to join match!";
+
+    // 2. 组装内网 RPC 请求
+    game::rpc::JoinMatchRequest rpc_req;
+    rpc_req.set_user_id(uid);
+    rpc_req.set_elo_score(1500);                                                // 假装大家都是1500分
+
+    // 【高维路由绝杀】：把当前网关接收推送的地址塞进去！
+    rpc_req.set_gateway_ip(ip_);
+    rpc_req.set_gateway_port(port_);
+
+    game::rpc::JoinMatchResponse rpc_resp;
+
+    // 3. 向 MatchServer 发起 RPC 调用 (假设匹配服在 9091)
+    MyChannel match_channel("127.0.0.1", 9091);
+    game::rpc::MatchService_Stub stub(&match_channel);
+    stub.JoinQueue(nullptr, &rpc_req, &rpc_resp, nullptr);
+
+    // 4. 组装外网响应 (只告诉 UE5 "是否成功加入队列")
+    game::client::ClientJoinMatchResponse client_resp;
+    client_resp.set_errcode(rpc_resp.errcode());
+    client_resp.set_errmsg(rpc_resp.errmsg());
+
+    std::string resp_data;
+    client_resp.SerializeToString(&resp_data);
+    SendToConn(conn, game::net::MSG_JOIN_MATCH_RESP, resp_data);
 }
 
+
 // ================== 推送响应回包 ==================
+void GatewayTcpServer::SendToConn(const std::shared_ptr<TcpConnection>& conn, uint32_t msg_id, const std::string& pb_data)
+{
+    uint32_t res_len = 4 + pb_data.size();
+    uint32_t net_res_len = htonl(res_len);
+    uint32_t net_msg_id = htonl(msg_id);
+
+    std::string send_buf;
+    send_buf.append((char*)&net_res_len, 4);
+    send_buf.append((char*)&net_msg_id, 4);
+    send_buf.append(pb_data);
+
+    conn->Send(send_buf);
+}
+
 bool GatewayTcpServer::PushMessageToClient(int32_t uid, uint32_t msg_type, const std::string& content)
 {
     std::shared_ptr<TcpConnection> target_conn = nullptr;
@@ -139,16 +197,7 @@ bool GatewayTcpServer::PushMessageToClient(int32_t uid, uint32_t msg_type, const
     if (target_conn)
     {
         // 组装外网协议发给他 (长度 + MsgID + 数据)
-        uint32_t res_len = 4 + content.size();
-        uint32_t net_res_len = htonl(res_len);
-        uint32_t net_msg_id = htonl(msg_type);
-
-        std::string send_buf;
-        send_buf.append((char*)&net_res_len, 4);
-        send_buf.append((char*)&net_msg_id, 4);
-        send_buf.append(content);
-
-        target_conn->Send(send_buf);
+        SendToConn(target_conn, msg_type, content);
         return true;
     }
     return false; // 玩家不在线
