@@ -7,22 +7,27 @@
 #include <mutex>
 #include <memory>
 #include <string>
+#include <functional>
+
+// 定义消息处理函数签名：入参是 (当前物理连接, 尚未反序列化的 Protobuf 纯二进制流)
+using MsgHandler = std::function<void(const std::shared_ptr<TcpConnection>&, const std::string&)>;
 
 class GatewayTcpServer
 {
 public:
 	GatewayTcpServer(EventLoop* loop, const std::string& ip, uint16_t port);
 
-    // 启动服务
-    void Start(int thread_num);
-
-    // 提供给内部 RPC 调用的核心接口：精准推送消息给某个物理客户端
-    bool PushMessageToClient(int32_t uid, uint32_t msg_type, const std::string& content);
+    void Start(int thread_num);                                                                                         // 启动服务
+    bool PushMessageToClient(int32_t uid, uint32_t msg_type, const std::string& content);                               // 提供给内部 RPC 调用的核心接口：精准推送消息给某个物理客户端
 
 private:
-    // 底层网络回调
-    void OnConnection(const std::shared_ptr<TcpConnection>& conn);
+    void OnConnection(const std::shared_ptr<TcpConnection>& conn);                                                      // 底层网络回调
     void OnMessage(const std::shared_ptr<TcpConnection>& conn, Buffer* buffer);
+
+private:    
+    void RegisterHandler(uint32_t msg_id, MsgHandler handler);                                                          // 注册路由的回调函数
+    void HandleLoginReq(const std::shared_ptr<TcpConnection>& conn, const std::string& pb_data);                        // 具体的业务处理函数 (相当于 Controller)
+    void HandleJoinMatchReq(const std::shared_ptr<TcpConnection>& conn, const std::string& pb_data);
 
 private:
     TcpServer server_;
@@ -30,6 +35,7 @@ private:
     // 会话管理器 (封装在类内部，绝对安全)
     std::mutex session_mutex_;
     std::unordered_map<int32_t, std::shared_ptr<TcpConnection>> user_sessions_;
+    std::unordered_map<uint32_t, MsgHandler> msg_dispatcher_;                                                           // 事件分发
 };
 
 #endif

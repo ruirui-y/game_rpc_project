@@ -4,13 +4,20 @@
 #include "gateway.pb.h"
 #include <mymuduo/Log/Logger.h>
 #include <mymuduo/net/TcpConnection.h>
-#include <unordered_map>
 #include <mutex>
-
+#include "GatewayTcpServer.h"
 using namespace game::rpc;
+
+/*
+* 其余服务通过rpc调用gateway，gateway再通过tcp连接推送给客户端
+*/
 
 class MyGatewayService : public game::rpc::GatewayService
 {
+public:
+    MyGatewayService(GatewayTcpServer* tcp_server) : tcp_server_(tcp_server) {}
+    virtual ~MyGatewayService() {}
+
 public:
     virtual void PushMessage(::google::protobuf::RpcController* controller,
         const ::game::rpc::PushMessageRequest* request,
@@ -22,22 +29,27 @@ public:
         std::string content = request->content();
 
         LOG_INFO << "Gateway received push request from backend! Target User: " << uid;
+        
+        // 将消息推送给对应的客户端
+        bool success = tcp_server_->PushMessageToClient(uid, type, content);
 
-        // 【核心路由逻辑】
-        // 未来这里会去一个类似 user_connections 的 Map 里找到 uid 对应的 TcpConnection
-        // 然后调用 conn->Send(content); 把数据发给真正的手机/PC客户端。
-
-        // 现阶段我们先打印出来，模拟推送成功
-        LOG_INFO << "Pushing to Client ---> Type: " << type << ", Content: " << content;
-
-        response->set_errcode(0);
-        response->set_errmsg("Push success");
-
+        // 返回rpc响应
+        if (success)
+        {
+            response->set_errcode(0);
+            response->set_errmsg("Push success");
+        }
+        else 
+        {
+            LOG_ERROR << "[Gateway Internal] Push failed, User " << uid << " is offline.";
+            response->set_errcode(1);
+            response->set_errmsg("User offline");
+        }
         done->Run();
     }
 
 private:
-    std::unordered_map<int32_t, std::shared_ptr<TcpConnection>> user_connections_;
+    GatewayTcpServer* tcp_server_;
 };
 
 #endif

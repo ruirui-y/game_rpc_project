@@ -2,9 +2,10 @@
 #include <thread>
 #include <chrono>
 #include "RPCServer.h"
-#include "MyGatewayService.h" // 你之前写的网关接收推送服务
+#include "MyGatewayService.h"
+#include "GatewayTcpServer.h"
 #include "match.pb.h"
-#include "MyChannel.h"        // 假设你改名叫 MyChannel 了
+#include "MyChannel.h"
 
 // 模拟 UE5 客户端通过网关发起匹配
 void SimulateClientsJoinMatch()
@@ -45,17 +46,29 @@ int main(int argc, char** argv)
 {
     LOG_INFO << "=== Gateway Server is starting on port 8000 ===";
 
-    // 1. 网关启动自己的 RPC Server，专门用来接收后端(匹配/聊天)的反向推送
-    RPCServer gateway_server("127.0.0.1", 8000);
-    MyGatewayService gateway_service;
-    gateway_server.RegisterService(&gateway_service);
+    // 1. 启动外网网关
+    EventLoop client_loop;
+    GatewayTcpServer tcp_server(&client_loop, "0.0.0.0", 8001);
+    tcp_server.Start(4);
 
-    // 2. 启动一个测试线程，模拟客户端发送匹配请求
-    std::thread test_thread(SimulateClientsJoinMatch);
-    test_thread.detach();
+    // 在后台线程中监听外部的长连接
+    std::thread client_thread([&client_loop]()
+        {
+            LOG_INFO << "[Gateway] External TCP Server listening on 8001...";
+            client_loop.Loop();
+        });
+    client_thread.detach();
 
-    // 3. 阻塞运行网关服务
-    gateway_server.Run();
+    // 2. 内网RPC
+    RPCServer gateway_rpc_server("127.0.0.1", 8000);
 
+    // 把 tcp_server 的指针喂给 RPC 服务，供其余的rpc将消息路由到客户端
+    MyGatewayService gateway_service(&tcp_server);
+    gateway_rpc_server.RegisterService(&gateway_service);
+
+    LOG_INFO << "[Gateway] Internal RPC Server listening on 8000...";
+
+    // 3. 阻塞主线程运行
+    gateway_rpc_server.Run();
     return 0;
 }
