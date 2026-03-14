@@ -1,4 +1,4 @@
-#include "Channel.h"
+#include "MyChannel.h"
 #include <string>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -50,7 +50,7 @@ void MyChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
     send_rpc_str += request_str;
 
     // 6. 复用连接并发送数据
-    int sockfd = ConnectionPool::GetInstance().GetConnection("127.0.0.1", 9090);
+    int sockfd = ConnectionPool::GetInstance().GetConnection(ip_, port_);
     if (-1 == send(sockfd, send_rpc_str.c_str(), send_rpc_str.size(), 0))                               // 发送二进制流
     {
         close(sockfd);                                                                                  // 失败关闭
