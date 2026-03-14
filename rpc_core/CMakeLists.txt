@@ -8,19 +8,21 @@ set(PB_OUT_DIR ${CMAKE_SOURCE_DIR}/pb)
 # 1. 找到所有的 .proto 文件
 file(GLOB PROTO_FILES "${PROTO_SRC_DIR}/*.proto")
 
-# 2. 预期生成的文件
-set(PROTO_PCH_SRCS
-    ${PB_OUT_DIR}/login.pb.cc
-    ${PB_OUT_DIR}/match.pb.cc
-    ${PB_OUT_DIR}/gateway.pb.cc
-    ${PB_OUT_DIR}/rpcheader.pb.cc
-)
-set(PROTO_PCH_HDRS
-    ${PB_OUT_DIR}/login.pb.h
-    ${PB_OUT_DIR}/match.pb.h
-    ${PB_OUT_DIR}/gateway.pb.h
-    ${PB_OUT_DIR}/rpcheader.pb.h
-)
+# 2. 自动推导预期生成的 .pb.cc 和 .pb.h 文件 (告别手动填写！)
+set(PROTO_PCH_SRCS "")
+set(PROTO_PCH_HDRS "")
+
+foreach(PROTO_FILE ${PROTO_FILES})
+    # 提取纯文件名 (不含路径和扩展名)
+    get_filename_component(FIL_WE ${PROTO_FILE} NAME_WE)
+    
+    # 将推导出的文件路径加入列表
+    list(APPEND PROTO_PCH_SRCS "${PB_OUT_DIR}/${FIL_WE}.pb.cc")
+    list(APPEND PROTO_PCH_HDRS "${PB_OUT_DIR}/${FIL_WE}.pb.h")
+endforeach()
+
+# 打印一下自动扫描的结果，方便排错时查看
+message(STATUS "Auto-detected Protobuf Sources: ${PROTO_PCH_SRCS}")
 
 # 3. 自定义命令：执行 protoc
 add_custom_command(
