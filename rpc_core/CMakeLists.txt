@@ -11,10 +11,14 @@ file(GLOB PROTO_FILES "${PROTO_SRC_DIR}/*.proto")
 # 2. 预期生成的文件
 set(PROTO_PCH_SRCS
     ${PB_OUT_DIR}/login.pb.cc
+    ${PB_OUT_DIR}/match.pb.cc
+    ${PB_OUT_DIR}/gateway.pb.cc
     ${PB_OUT_DIR}/rpcheader.pb.cc
 )
 set(PROTO_PCH_HDRS
     ${PB_OUT_DIR}/login.pb.h
+    ${PB_OUT_DIR}/match.pb.h
+    ${PB_OUT_DIR}/gateway.pb.h
     ${PB_OUT_DIR}/rpcheader.pb.h
 )
 
