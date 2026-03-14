@@ -9,7 +9,7 @@ void RPCServer::RegisterService(google::protobuf::Service* service)
 
 void RPCServer::Run()
 {
-	TcpServer server(&event_loop_, ip_, port_, 100000);
+	TcpServer server(&event_loop_, ip_, port_, 1000);
 	server.SetMessageCallback(
 		[this](const std::shared_ptr<TcpConnection>& conn, Buffer* buffer)
 		{
