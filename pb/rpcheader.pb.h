@@ -192,7 +192,8 @@ class RpcHeader final :
   enum : int {
     kServiceNameFieldNumber = 1,
     kMethodNameFieldNumber = 2,
-    kArgsSizeFieldNumber = 3,
+    kMethodIndexFieldNumber = 3,
+    kArgsSizeFieldNumber = 4,
   };
   // string service_name = 1;
   void clear_service_name();
@@ -222,7 +223,16 @@ class RpcHeader final :
   std::string* _internal_mutable_method_name();
   public:
 
-  // uint32 args_size = 3;
+  // uint32 method_index = 3;
+  void clear_method_index();
+  uint32_t method_index() const;
+  void set_method_index(uint32_t value);
+  private:
+  uint32_t _internal_method_index() const;
+  void _internal_set_method_index(uint32_t value);
+  public:
+
+  // uint32 args_size = 4;
   void clear_args_size();
   uint32_t args_size() const;
   void set_args_size(uint32_t value);
@@ -240,6 +250,7 @@ class RpcHeader final :
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr service_name_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr method_name_;
+  uint32_t method_index_;
   uint32_t args_size_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_rpcheader_2eproto;
@@ -357,7 +368,27 @@ inline void RpcHeader::set_allocated_method_name(std::string* method_name) {
   // @@protoc_insertion_point(field_set_allocated:rpc.core.RpcHeader.method_name)
 }
 
-// uint32 args_size = 3;
+// uint32 method_index = 3;
+inline void RpcHeader::clear_method_index() {
+  method_index_ = 0u;
+}
+inline uint32_t RpcHeader::_internal_method_index() const {
+  return method_index_;
+}
+inline uint32_t RpcHeader::method_index() const {
+  // @@protoc_insertion_point(field_get:rpc.core.RpcHeader.method_index)
+  return _internal_method_index();
+}
+inline void RpcHeader::_internal_set_method_index(uint32_t value) {
+  
+  method_index_ = value;
+}
+inline void RpcHeader::set_method_index(uint32_t value) {
+  _internal_set_method_index(value);
+  // @@protoc_insertion_point(field_set:rpc.core.RpcHeader.method_index)
+}
+
+// uint32 args_size = 4;
 inline void RpcHeader::clear_args_size() {
   args_size_ = 0u;
 }
