@@ -12,8 +12,8 @@ public:
     // 真正的本地业务逻辑
     bool Login(std::string name, std::string pwd)
     {
-        LOG_INFO << "执行了本地业务：Login";
-        LOG_INFO << "登录用户名: " << name.c_str() << "密码: " << pwd.c_str();
+        LOG_INFO << "Execute Login Service";
+        LOG_INFO << "user_name = " << name.c_str() << " pwd = " << pwd.c_str();
         return true;
     }
 
