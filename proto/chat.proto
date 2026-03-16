@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package game.rpc;
+
+option cc_generic_services = true;
+
+// 聊天请求 (网关 -> 聊天服)
+message ChatMessageRequest 
+{
+    int32 sender_id = 1;                                // 发送者的 UID (网关从 Context 提取)
+    int32 target_id = 2;                                // 接收者的 UID (如果是世界/全服聊天，可以约定填 0)
+    int32 chat_type = 3;                                // 聊天类型 (例如 1: 私聊, 2: 世界频道)
+    string content = 4;                                 // 聊天内容
+}
+
+message ChatMessageResponse 
+{
+    int32 errcode = 1;
+    string errmsg = 2;
+}
+
+// 聊天服务接口
+service ChatService 
+{
+    // 接收网关转发过来的聊天请求
+    rpc SendMessage(ChatMessageRequest) returns(ChatMessageResponse);
+}
