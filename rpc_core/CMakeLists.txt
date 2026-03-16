@@ -42,4 +42,4 @@ file(GLOB RPC_CORE_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 add_library(rpc_core STATIC ${RPC_CORE_SRCS} ${PROTO_PCH_SRCS})
 
 # 6. 链接依赖
-target_link_libraries(rpc_core PUBLIC ${Protobuf_LIBRARIES} pthread mymuduo)
+target_link_libraries(rpc_core PUBLIC ${Protobuf_LIBRARIES} pthread mymuduo mysqlcppconn hiredis zookeeper_mt)
