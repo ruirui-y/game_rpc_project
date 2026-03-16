@@ -365,6 +365,7 @@ class LoginResponse final :
     kErrmsgFieldNumber = 2,
     kTokenFieldNumber = 3,
     kErrcodeFieldNumber = 1,
+    kUserIdFieldNumber = 4,
   };
   // string errmsg = 2;
   void clear_errmsg();
@@ -403,6 +404,15 @@ class LoginResponse final :
   void _internal_set_errcode(int32_t value);
   public:
 
+  // int32 user_id = 4;
+  void clear_user_id();
+  int32_t user_id() const;
+  void set_user_id(int32_t value);
+  private:
+  int32_t _internal_user_id() const;
+  void _internal_set_user_id(int32_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:game.rpc.LoginResponse)
  private:
   class _Internal;
@@ -413,6 +423,7 @@ class LoginResponse final :
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr errmsg_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr token_;
   int32_t errcode_;
+  int32_t user_id_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_login_2eproto;
 };
@@ -712,6 +723,26 @@ inline void LoginResponse::set_allocated_token(std::string* token) {
   }
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:game.rpc.LoginResponse.token)
+}
+
+// int32 user_id = 4;
+inline void LoginResponse::clear_user_id() {
+  user_id_ = 0;
+}
+inline int32_t LoginResponse::_internal_user_id() const {
+  return user_id_;
+}
+inline int32_t LoginResponse::user_id() const {
+  // @@protoc_insertion_point(field_get:game.rpc.LoginResponse.user_id)
+  return _internal_user_id();
+}
+inline void LoginResponse::_internal_set_user_id(int32_t value) {
+  
+  user_id_ = value;
+}
+inline void LoginResponse::set_user_id(int32_t value) {
+  _internal_set_user_id(value);
+  // @@protoc_insertion_point(field_set:game.rpc.LoginResponse.user_id)
 }
 
 #ifdef __GNUC__
