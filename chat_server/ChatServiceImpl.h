@@ -19,7 +19,7 @@ public:
 		::google::protobuf::Closure* done) override;
 
 private:
-	std::string GetGatewayAddressFromRedis(int32_t targid_uid);
+	std::string GetGatewayAddressFromRedis(int32_t target_uid);
 };
 }
 }
