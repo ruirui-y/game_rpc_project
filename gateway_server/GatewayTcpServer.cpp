@@ -145,7 +145,7 @@ void GatewayTcpServer::HandleJoinMatchReq(const std::shared_ptr<TcpConnection>& 
     rpc_req.set_user_id(uid);
     rpc_req.set_elo_score(1500);                                                // 假装大家都是1500分
 
-    // 【高维路由绝杀】：把当前网关接收推送的地址塞进去！
+    // 把当前网关接收推送的地址塞进去！
     rpc_req.set_gateway_ip(ip_);
     rpc_req.set_gateway_port(port_);
 
@@ -165,7 +165,6 @@ void GatewayTcpServer::HandleJoinMatchReq(const std::shared_ptr<TcpConnection>& 
     client_resp.SerializeToString(&resp_data);
     SendToConn(conn, game::net::MSG_JOIN_MATCH_RESP, resp_data);
 }
-
 
 // ================== 推送响应回包 ==================
 void GatewayTcpServer::SendToConn(const std::shared_ptr<TcpConnection>& conn, uint32_t msg_id, const std::string& pb_data)
