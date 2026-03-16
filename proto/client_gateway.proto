@@ -36,3 +36,25 @@ message ClientMatchSuccessPush
     int32 battle_server_port = 2;
     // ... 其他对局信息
 }
+
+
+// ================== 聊天模块 ==================
+// 客户端发给网关的聊天请求
+message ClientChatRequest {
+    int32 target_id = 1;    // 想发给谁？(0代表全服)
+    int32 chat_type = 2;    // 1: 私聊, 2: 世界
+    string content = 3;     // 聊天内容
+}
+
+// 网关回复客户端“发送成功/失败”
+message ClientChatResponse {
+    int32 errcode = 1;
+    string errmsg = 2;
+}
+
+// 【核心】：服务端主动推给客户端的聊天消息
+message ClientChatPush {
+    int32 sender_id = 1;    // 谁发来的？
+    int32 chat_type = 2;    // 哪种频道的消息？
+    string content = 3;     // 消息内容
+}
