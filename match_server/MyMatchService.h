@@ -52,6 +52,7 @@ public:
             if (!is_exist) 
             {
                 match_pool_.push_back({ uid, score, gw_ip, gw_port });
+                match_cv_.notify_one();
                 response->set_errcode(0);
                 response->set_errmsg("Join queue success");
             }
@@ -69,8 +70,8 @@ public:
     // 后台线程定时执行检查匹配池中的玩家是否满足匹配条件
     void DoMatch() 
     {
-        std::lock_guard<std::mutex> lock(match_mutex_);
-
+        std::unique_lock<std::mutex> lock(match_mutex_);
+        match_cv_.wait(lock, [this] { return match_pool_.size() >= 2; });                       // 等待直到匹配池中有至少2个玩家
         if (match_pool_.size() >= 2)
         {
             LOG_INFO << "Match Success! Found 2 players. Preparing to push results...";
@@ -87,7 +88,7 @@ public:
                 
                 PushMessageRequest push_req;
                 push_req.set_user_id(target_uid);
-                push_req.set_msg_type(1);                                                       // 1代表匹配成功通知
+                push_req.set_msg_type(2);                                                       // 2表示匹配成功
                 push_req.set_content("");
                 
                 PushMessageResponse push_resp;
@@ -108,6 +109,7 @@ public:
 
 private:
     std::vector<PlayerInfo> match_pool_;                                                        // 匹配池
+    std::condition_variable match_cv_;                                                          // 避免忙等和自旋锁                
     std::mutex match_mutex_;                                                                    // 保护匹配池的锁
 };
 
