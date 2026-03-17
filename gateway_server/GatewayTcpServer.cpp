@@ -6,6 +6,8 @@
 #include "MsgID.h"
 #include "login.pb.h"
 #include "match.pb.h"
+#include "chat.pb.h"         
+#include "RedisClient.h"     
 #include "MyChannel.h"
 using namespace std::placeholders;
 
@@ -18,6 +20,7 @@ GatewayTcpServer::GatewayTcpServer(EventLoop* loop, const std::string& ip, uint1
     // ================== 路由表注册 ==================
     RegisterHandler(game::net::MSG_LOGIN_REQ, std::bind(&GatewayTcpServer::HandleLoginReq, this, _1, _2));
     RegisterHandler(game::net::MSG_JOIN_MATCH_REQ, std::bind(&GatewayTcpServer::HandleJoinMatchReq, this, _1, _2));
+    RegisterHandler(game::net::MSG_CHAT_REQ, std::bind(&GatewayTcpServer::HandleChatReq, this, _1, _2));
 }
 
 void GatewayTcpServer::Start(int thread_num)
@@ -117,9 +120,22 @@ void GatewayTcpServer::HandleLoginReq(const std::shared_ptr<TcpConnection>& conn
             std::lock_guard<std::mutex> lock(session_mutex_);
             user_sessions_[real_uid] = conn;
         }
-
         LOG_INFO << "[Gateway] Player " << real_uid << " login success! Session bound.";
         client_resp.set_user_id(real_uid);
+
+        // 注册网关信息到redis中
+        RedisClient redis;
+        if (redis.Connect("127.0.0.1", 6379)) 
+        {
+            // 设置rpc网关地址信息
+            std::string rpc_addr = ip_ + ":" + std::to_string(port_);
+            redis.HSet("session:users", std::to_string(real_uid), rpc_addr);
+            LOG_INFO << "[Gateway] Player " << real_uid << " globally registered to Redis -> " << rpc_addr;
+        }
+        else 
+        {
+            LOG_ERROR << "[Gateway] Redis connect failed, global routing registration skipped!";
+        }
     }
 
     // 5. 序列化外网响应，直接打回给客户端
@@ -164,6 +180,50 @@ void GatewayTcpServer::HandleJoinMatchReq(const std::shared_ptr<TcpConnection>& 
     std::string resp_data;
     client_resp.SerializeToString(&resp_data);
     SendToConn(conn, game::net::MSG_JOIN_MATCH_RESP, resp_data);
+}
+
+void GatewayTcpServer::HandleChatReq(const std::shared_ptr<TcpConnection>& conn, const std::string& pb_data)
+{
+    // 1. 安全校验
+    if (!conn->GetContext().has_value()) 
+    {
+        conn->ForceClose();
+        return;
+    }
+    int32_t sender_uid = std::any_cast<int32_t>(conn->GetContext());
+
+    // 2. 解析客户端发来的聊天信息请求
+    game::client::ClientChatRequest client_req;
+    if (!client_req.ParseFromString(pb_data))
+    {
+        LOG_ERROR << "[Gateway] Failed to parse ClientChatRequest!";
+        return;
+    }
+
+    LOG_INFO << "[Gateway] Received chat from " << sender_uid << " to " << client_req.target_id();
+
+    // 3. 组装内网RPC请求
+    game::rpc::ChatMessageRequest rpc_req;
+    rpc_req.set_sender_id(sender_uid);
+    rpc_req.set_target_id(client_req.target_id());
+    rpc_req.set_chat_type(client_req.chat_type());
+    rpc_req.set_content(client_req.content());
+
+    game::rpc::ChatMessageResponse rpc_resp;
+    
+    // 4. 化身 RPC 客户端，向 ChatServer 发起内部调用
+    MyChannel chat_channel("127.0.0.1", 9111);
+    game::rpc::ChatService_Stub stub(&chat_channel);
+    stub.SendMessage(nullptr, &rpc_req, &rpc_resp, nullptr);
+
+    // 5. 将处理结果返回给发送消息的玩家
+    game::client::ClientChatResponse client_resp;
+    client_resp.set_errcode(rpc_resp.errcode());
+    client_resp.set_errmsg(rpc_resp.errmsg());
+
+    std::string resp_data;
+    client_resp.SerializeToString(&resp_data);
+    SendToConn(conn, game::net::MSG_CHAT_RESP, resp_data);
 }
 
 // ================== 推送响应回包 ==================

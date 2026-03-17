@@ -26,8 +26,12 @@ private:
 
 private:    
     void RegisterHandler(uint32_t msg_id, MsgHandler handler);                                                          // 注册路由的回调函数
-    void HandleLoginReq(const std::shared_ptr<TcpConnection>& conn, const std::string& pb_data);                        // 具体的业务处理函数 (相当于 Controller)
+    
+    // 具体的业务处理函数 (登录，加入匹配，聊天)
+    void HandleLoginReq(const std::shared_ptr<TcpConnection>& conn, const std::string& pb_data);                        
     void HandleJoinMatchReq(const std::shared_ptr<TcpConnection>& conn, const std::string& pb_data);
+    void HandleChatReq(const std::shared_ptr<TcpConnection>& conn, const std::string& pb_data);
+    
     void SendToConn(const std::shared_ptr<TcpConnection>& conn, uint32_t msg_id, const std::string& pb_data);           // 发送数据
 private:
     TcpServer server_;
