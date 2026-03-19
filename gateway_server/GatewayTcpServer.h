@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include "MyChannel.h"
 
 // 定义消息处理函数签名：入参是 (当前物理连接, 尚未反序列化的 Protobuf 纯二进制流)
 using MsgHandler = std::function<void(const std::shared_ptr<TcpConnection>&, const std::string&)>;
@@ -43,6 +44,11 @@ private:
     std::mutex session_mutex_;
     std::unordered_map<int32_t, std::shared_ptr<TcpConnection>> user_sessions_;
     std::unordered_map<uint32_t, MsgHandler> msg_dispatcher_;                                                           // 事件分发
+
+    // 网关全局共享的rpc通道
+    std::shared_ptr<MyChannel> login_channel_;
+    std::shared_ptr<MyChannel> chat_channel_;
+    std::shared_ptr<MyChannel> match_channel_;
 };
 
 #endif
