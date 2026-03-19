@@ -194,6 +194,7 @@ class RpcHeader final :
     kMethodNameFieldNumber = 2,
     kMethodIndexFieldNumber = 3,
     kArgsSizeFieldNumber = 4,
+    kSeqIdFieldNumber = 5,
   };
   // string service_name = 1;
   void clear_service_name();
@@ -241,6 +242,15 @@ class RpcHeader final :
   void _internal_set_args_size(uint32_t value);
   public:
 
+  // uint64 seq_id = 5;
+  void clear_seq_id();
+  uint64_t seq_id() const;
+  void set_seq_id(uint64_t value);
+  private:
+  uint64_t _internal_seq_id() const;
+  void _internal_set_seq_id(uint64_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:rpc.core.RpcHeader)
  private:
   class _Internal;
@@ -252,6 +262,7 @@ class RpcHeader final :
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr method_name_;
   uint32_t method_index_;
   uint32_t args_size_;
+  uint64_t seq_id_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_rpcheader_2eproto;
 };
@@ -406,6 +417,26 @@ inline void RpcHeader::_internal_set_args_size(uint32_t value) {
 inline void RpcHeader::set_args_size(uint32_t value) {
   _internal_set_args_size(value);
   // @@protoc_insertion_point(field_set:rpc.core.RpcHeader.args_size)
+}
+
+// uint64 seq_id = 5;
+inline void RpcHeader::clear_seq_id() {
+  seq_id_ = uint64_t{0u};
+}
+inline uint64_t RpcHeader::_internal_seq_id() const {
+  return seq_id_;
+}
+inline uint64_t RpcHeader::seq_id() const {
+  // @@protoc_insertion_point(field_get:rpc.core.RpcHeader.seq_id)
+  return _internal_seq_id();
+}
+inline void RpcHeader::_internal_set_seq_id(uint64_t value) {
+  
+  seq_id_ = value;
+}
+inline void RpcHeader::set_seq_id(uint64_t value) {
+  _internal_set_seq_id(value);
+  // @@protoc_insertion_point(field_set:rpc.core.RpcHeader.seq_id)
 }
 
 #ifdef __GNUC__
