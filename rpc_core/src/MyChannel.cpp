@@ -14,8 +14,7 @@
 MyChannel::MyChannel(const std::string& ip, int port)
     : ip_(ip),
     port_(port),
-    is_running_(true),
-    seq_id_allocator_(1)
+    is_running_(true)
 {
     client_fd_ = ConnectionPool::GetInstance().GetConnection(ip_, port_);
     recv_thread_ = std::thread(&MyChannel::ReceiverTask, this);
@@ -70,13 +69,13 @@ void MyChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
     send_rpc_str += request_str;
 
     // 5. 准备睡觉的床和叫醒凭证
-    std::promise<std::string> prom;
-    std::future<std::string> fut = prom.get_future();
+    auto prom = std::make_shared<std::promise<std::string>>();
+    std::future<std::string> fut = prom->get_future();
 
     {
         // 去总台登记：单号 seq_id 对应的凭证是 prom
         std::lock_guard<std::mutex> lock(map_mutex_);
-        pending_calls_[seq_id] = &prom;
+        pending_calls_[seq_id] = prom;
     }
 
     // 6. 加锁发送，防止多个工作线程同时写 Socket 导致数据错乱

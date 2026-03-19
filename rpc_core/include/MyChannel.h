@@ -35,10 +35,11 @@ private:
     int client_fd_;
     bool is_running_;
     std::thread recv_thread_;
-    std::atomic<uint64_t> seq_id_allocator_;                                                // 线程安全的流水号生成器
-    std::mutex write_mutex_;                                                                // 保护发包，防止多个线程把数据写串
+    std::mutex write_mutex_;                                                                    // 保护发包，防止多个线程把数据写串
+    
+    std::mutex map_mutex_;                                                                      // 保护Map 的 锁
+    std::unordered_map<uint64_t, std::shared_ptr<std::promise<std::string>>> pending_calls_;    // 快递单号映射表
 
-    std::mutex map_mutex_;
-    std::unordered_map<uint64_t, std::promise<std::string>*> pending_calls_;                // 快递单号->阻塞等待的线程凭证
+    inline static std::atomic<uint64_t> seq_id_allocator_{ 1 };                                 // 1. 全局唯一的流水号生成器
 };
 #endif
