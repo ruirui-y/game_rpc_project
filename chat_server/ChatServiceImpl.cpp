@@ -3,6 +3,9 @@
 #include "RedisClient.h"
 #include "MyChannel.h"
 #include "gateway.pb.h"
+#include "chat.pb.h"
+#include "MsgID.h"
+#include "client_gateway.pb.h"
 
 game::rpc::ChatServiceImpl::ChatServiceImpl()
 {
@@ -48,11 +51,19 @@ void game::rpc::ChatServiceImpl::SendMessage(::google::protobuf::RpcController* 
 			MyChannel channel(ip, port);
 			GatewayService_Stub stub(&channel);
 
+			// 组装客户端认识的外网协议对象
+			game::client::ClientChatPush client_chat_push;
+			client_chat_push.set_sender_id(sender_id);
+			client_chat_push.set_chat_type(type);
+			client_chat_push.set_content(message);
+			std::string client_chat_push_data;
+            client_chat_push.SerializeToString(&client_chat_push_data);
+
 			// 组装发给网关的推送请求
 			PushMessageRequest push_req;
 			push_req.set_user_id(target_id);
-			push_req.set_msg_type(3003);
-			push_req.set_content(message);
+			push_req.set_msg_type(game::net::MSG_CHAT_PUSH);
+			push_req.set_content(client_chat_push_data);
 
 			// 响应
 			PushMessageResponse push_res;
@@ -66,7 +77,7 @@ void game::rpc::ChatServiceImpl::SendMessage(::google::protobuf::RpcController* 
 				response->set_errcode(0);
 				response->set_errmsg("Send Success");
 				LOG_INFO << "ChatServer Send Success To Target UID: " << target_id
-					<< "Location Gateway: " << target_gateway;
+					<< " Location Gateway: " << target_gateway;
 			}
 			else
 			{
