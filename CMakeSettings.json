@@ -17,8 +17,7 @@
             "remoteCopySources": true,
             "rsyncCommandArgs": "-t --delete",
             "remoteCopyBuildOutput": false,
-            "remoteCopySourcesMethod": "rsync",
-            "remoteCopyAdditionalIncludeDirectories": [ "/home/yjj/.vs/MPRPC/095085fd-d8be-48c3-92db-ff0eb307d2ce/src/test/protobuf_test", "" ]
+            "remoteCopySourcesMethod": "rsync"
         }
     ]
 }
