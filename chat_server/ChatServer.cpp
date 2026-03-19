@@ -6,10 +6,10 @@ using namespace game::rpc;
 
 int main(int argc, char** argv)
 {
-    LOG_INFO << "=== Gateway Server is starting on port 9111 ===";
+    LOG_INFO << "=== Gateway Server is starting on port 9092 ===";
 
     // 1. ×¢²áÁÄÌì·þÎñ
-    RPCServer chat_rpc_server("127.0.0.1", 9111);
+    RPCServer chat_rpc_server("127.0.0.1", 9092);
     ChatServiceImpl chat_service;
     chat_rpc_server.RegisterService(&chat_service);
 
