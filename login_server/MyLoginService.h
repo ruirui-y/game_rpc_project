@@ -44,8 +44,13 @@ public:
 
         // 3. 把响应写回给框架
         response->set_errcode(0);
-        response->set_errmsg("登录成功");
+        response->set_errmsg("Login Success");
         response->set_token("11111111");
+
+        // 测试
+        int32_t uid = name == "mars" ? 1 : 2;
+        LOG_INFO << "login client name = " << name << " uid = " << uid;
+        response->set_user_id(uid);
 
         // 4. 释放分布式锁并执行回调操作
         // 这里的 done 本质是 RpcProvider 传进来的 SendRpcResponse 回调
