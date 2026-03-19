@@ -10,4 +10,5 @@ message RpcHeader
     string method_name = 2;                                     // 具体的函数名。例如："Login"
     uint32 method_index = 3;                                    // 方法索引
     uint32 args_size = 4;                                       // 重点：紧跟在 Header 后面的参数 (比如 LoginRequest) 序列化后的字节长度！
+    uint64 seq_id = 5;                                          // 请求序列号
 }
