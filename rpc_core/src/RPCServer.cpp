@@ -1,6 +1,8 @@
 #include "RPCServer.h"
 #include "rpcheader.pb.h"
+#include "RPCClosure.h"
 #include <mymuduo/Log/Logger.h>
+#include <endian.h>
 
 void RPCServer::RegisterService(google::protobuf::Service* service)
 {
@@ -76,10 +78,13 @@ void RPCServer::OnMessage(const std::shared_ptr<TcpConnection>& conn, Buffer* bu
         }
         google::protobuf::Message* response = service->GetResponsePrototype(method).New();
 
-        google::protobuf::Closure* done = google::protobuf::NewCallback<RPCServer,
-            const std::shared_ptr<TcpConnection>&, google::protobuf::Message*>
-            (this, &RPCServer::SendRpcResponse, conn, response);
+        uint64_t seq_id = rpcHeader.seq_id();
 
+        google::protobuf::Closure* done = new RPCClosure(
+            [this, conn, response, seq_id]() {
+                this->SendRpcResponse(conn, response, seq_id);
+            }
+        );
         service->CallMethod(method, nullptr, request, response, done);
 
         // 释放堆空间
@@ -88,23 +93,28 @@ void RPCServer::OnMessage(const std::shared_ptr<TcpConnection>& conn, Buffer* bu
     }
 }
 
-// 长度(4B) + 内容
-void RPCServer::SendRpcResponse(const std::shared_ptr<TcpConnection>& conn, google::protobuf::Message* response)
+// 长度(4B) + 序列号(8B) + 内容
+void RPCServer::SendRpcResponse(const std::shared_ptr<TcpConnection>& conn, google::protobuf::Message* response, uint64_t seq_id)
 {
     std::string response_str;
     if (response->SerializeToString(&response_str))
     {
-        // --- 添加 4 字节长度报头 ---
-        uint32_t response_size = response_str.size();
+        // 1. 计算除了 4 字节长度头之外的“总长度”：8字节 SeqID + PB数据长度
+        uint32_t total_len = 8 + response_str.size();
+
+        // 转换长度为网络字节序
+        uint32_t net_len = htonl(total_len);
+
+        // 2. 将 64 位单号转换为网络字节序 (Host to Big Endian 64)
+        uint64_t net_seq_id = htobe64(seq_id);
+
+        // 3. 完美拼装二进制流 (使用 append 更安全高效，避免 string 的 + 操作符可能带来的 '\0' 截断风险)
         std::string send_str;
+        send_str.append((char*)&net_len, 4);                                                            // 头部 4 字节
+        send_str.append((char*)&net_seq_id, 8);                                                         // 单号 8 字节
+        send_str.append(response_str);                                                                  // 真实 PB 响应
 
-        // 转换成网络字节序
-        uint32_t net_response_size = htonl(response_size);
-        send_str.insert(0, std::string((char*)&net_response_size, 4));
-
-        // 把长度信息以二进制形式放入前 4 个字节
-        send_str += response_str;
-
+        // 发送给网关
         conn->Send(send_str);
     }
     else

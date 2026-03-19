@@ -19,7 +19,7 @@ public:
 
 private:
 	void OnMessage(const std::shared_ptr<TcpConnection>& conn, Buffer* buffer);
-	void SendRpcResponse(const std::shared_ptr<TcpConnection>& conn, google::protobuf::Message* response);
+	void SendRpcResponse(const std::shared_ptr<TcpConnection>& conn, google::protobuf::Message* response, uint64_t seq_id);
 
 private:
 	std::unordered_map<std::string, google::protobuf::Service*> services;
